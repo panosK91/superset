@@ -17,6 +17,7 @@
  * under the License.
  */
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { styled, css, useTheme, SupersetTheme } from '@superset-ui/core';
 import { debounce } from 'lodash';
 import { Global } from '@emotion/react';
@@ -140,6 +141,7 @@ const StyledHeader = styled.header`
       }
   `}
 `;
+
 const globalStyles = (theme: SupersetTheme) => css`
   .ant-menu-submenu.ant-menu-submenu-popup.ant-menu.ant-menu-light.ant-menu-submenu-placement-bottomLeft {
     border-radius: 0px;
@@ -178,8 +180,8 @@ const globalStyles = (theme: SupersetTheme) => css`
     }
   }
 `;
-const { SubMenu } = DropdownMenu;
 
+const { SubMenu } = DropdownMenu;
 const { useBreakpoint } = Grid;
 
 export function Menu({
@@ -239,6 +241,27 @@ export function Menu({
   const standalone = getUrlParam(URL_PARAMS.standalone);
   if (standalone || uiConfig.hideNav) return <></>;
 
+  // New function: changeNavbarColor
+  // When called, this function sets the navbar background color to #455a64
+  // and sends a POST request to the backend endpoint to persist the change.
+  const changeNavbarColor = async () => {
+    const newColor = '#455a64';
+    // The navbar is the header element with the id "main-menu"
+    const navbarElement = document.getElementById('main-menu');
+    if (navbarElement) {
+      navbarElement.style.backgroundColor = newColor;
+    } else {
+      console.warn('Navbar element not found. Please ensure the element has id "main-menu".');
+    }
+    try {
+      await axios.post('/api/v1/readpostgres', { navbarColor: newColor });
+      console.info('Navbar color preference saved successfully.');
+    } catch (error) {
+      console.error('Error saving navbar color preference:', error);
+    }
+  };
+  // ------------------------------------------------------------------------
+
   const renderSubMenu = ({
     label,
     childs,
@@ -294,7 +317,9 @@ export function Menu({
       </SubMenu>
     );
   };
+
   return (
+    // The header element is given the id "main-menu" so that it can be targeted for style changes.
     <StyledHeader className="top" id="main-menu" role="navigation">
       <Global styles={globalStyles(theme)} />
       <Row>
@@ -335,7 +360,6 @@ export function Menu({
                   if (typeof c === 'string') {
                     return c;
                   }
-
                   return {
                     ...c,
                     isFrontendRoute: isFrontendRoute(c.url),
@@ -355,6 +379,22 @@ export function Menu({
             isFrontendRoute={isFrontendRoute}
             environmentTag={environmentTag}
           />
+
+          <div style={{ marginTop: '10px', textAlign: 'right' }}>
+            <button
+              onClick={changeNavbarColor}
+              style={{
+                padding: '6px 12px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                backgroundColor: '#f0f0f0',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+              }}
+            >
+              Change Navbar Color
+            </button>
+          </div>
         </Col>
       </Row>
     </StyledHeader>

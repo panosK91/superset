@@ -1,6 +1,7 @@
 {
   "name": "superset",
   "version": "4.0.0",
+    "private": true,
   "description": "Superset is a data exploration platform designed to be visual, intuitive, and interactive.",
   "keywords": [
     "big",
@@ -352,16 +353,6 @@
     "webpack-manifest-plugin": "^4.1.1",
     "webpack-sources": "^3.2.3",
     "xdm": "^3.4.0"
-  },
-  "engines": {
-    "node": "^16.20.2",
-    "npm": "^8.19.4"
-  },
-  "overrides": {
-    "d3-color": "^3.1.0",
-    "yosay": {
-      "ansi-regex": "^4.1.1"
-    }
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {

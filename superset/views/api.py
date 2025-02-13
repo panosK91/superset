@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 import simplejson as json
-from flask import request
+from flask import request, jsonify
 from flask_appbuilder import expose
 from flask_appbuilder.api import rison
 from flask_appbuilder.security.decorators import has_access_api
@@ -42,6 +42,19 @@ if TYPE_CHECKING:
 
 get_time_range_schema = {"type": "string"}
 
+# Model for User Preference
+from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.sql import func
+
+class UserPreference(db.Model):
+    __tablename__ = 'user_preferences'
+    id = Column(Integer, primary_key=True)
+    navbar_color = Column(String(7), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __init__(self, navbar_color):
+        self.navbar_color = navbar_color
+# End Model for User Preference
 
 class Api(BaseSupersetView):
     query_context_factory = None
@@ -94,7 +107,7 @@ class Api(BaseSupersetView):
     @rison(get_time_range_schema)
     @expose("/v1/time_range/", methods=("GET",))
     def time_range(self, **kwargs: Any) -> FlaskResponse:
-        """Get actually time range from human-readable string or datetime expression."""
+        """Get actual time range from human-readable string or datetime expression."""
         time_range = kwargs["rison"]
         try:
             since, until = get_since_until(time_range)
@@ -115,3 +128,32 @@ class Api(BaseSupersetView):
 
             self.query_context_factory = QueryContextFactory()
         return self.query_context_factory
+
+    # New API to Save Navbar Color
+    @event_logger.log_this
+    @api
+    @handle_api_exception
+    @has_access_api
+    @expose("/v1/readpostgres", methods=("POST",))
+    def save_navbar_color(self) -> FlaskResponse:
+        """
+        Save the custom navbar color preference to the database.
+        Expects a JSON payload: {"navbarColor": "#455a64"}
+        """
+        data = request.get_json()
+        navbar_color = data.get("navbarColor")
+        if not navbar_color:
+            return self.json_response({"error": "Navbar color not provided"}, 400)
+        try:
+            new_pref = UserPreference(navbar_color=navbar_color)
+            db.session.add(new_pref)
+            db.session.commit()
+            return self.json_response({
+                "message": "Navbar color preference saved successfully.",
+                "navbar_color": navbar_color,
+            }, 200)
+        except Exception as e:
+            db.session.rollback()
+            return self.json_response({"error": str(e)}, 500)
+    # End API to Save Navbar Color
+
